@@ -20,6 +20,10 @@ use Hush\Support\ErrorLogLogger;
 use Hush\Support\Logger;
 use Hush\Support\SystemClock;
 use Hush\Vault\SecretId;
+use Hush\Web\AssetController;
+use Hush\Web\PageAwareErrorRenderer;
+use Hush\Web\PageController;
+use Hush\Web\TemplateRenderer;
 use PDO;
 
 /**
@@ -72,6 +76,10 @@ final class Application
     {
         $id = '{id:' . SecretId::PATTERN . '}';
 
+        $router->get('/', [PageController::class, 'create'], ['rate' => 'page']);
+        $router->get('/s/' . $id, [PageController::class, 'view'], ['rate' => 'page']);
+        $router->get('/d/' . $id, [PageController::class, 'delete'], ['rate' => 'page']);
+        $router->get('/assets/{path:[A-Za-z0-9_./-]{1,200}}', [AssetController::class, 'serve'], ['rate' => 'page']);
         $router->get('/healthz', [HealthController::class, 'health'], ['rate' => 'page']);
 
         $router->post('/api/secrets', [SecretsController::class, 'create'], ['rate' => 'create', 'maxBody' => self::CREATE_BODY_LIMIT]);
@@ -87,7 +95,8 @@ final class Application
         $c = $this->container;
         $c->set(Logger::class, static fn(): Logger => new ErrorLogLogger());
         $c->set(Clock::class, static fn(): Clock => new SystemClock());
-        $c->set(ErrorRenderer::class, static fn(): ErrorRenderer => new JsonErrorRenderer());
+        $c->set(TemplateRenderer::class, static fn(Container $c): TemplateRenderer => new TemplateRenderer($c->get(Config::class)->projectRoot . '/resources/templates'));
+        $c->set(ErrorRenderer::class, static fn(Container $c): ErrorRenderer => $c->get(PageAwareErrorRenderer::class));
         $c->set(PDO::class, static fn(Container $c): PDO => Database::connect($c->get(Config::class)->databasePath));
         $c->set(Router::class, static function (): Router {
             $router = new Router();
