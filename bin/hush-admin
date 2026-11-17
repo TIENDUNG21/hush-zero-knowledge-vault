@@ -8,6 +8,6 @@ use Hush\Config\Config;
 
 require dirname(__DIR__) . '/vendor/autoload.php';
 
-$arguments = array_values(array_slice($argv, 1));
+$arguments = array_slice($argv, 1);
 
 exit((new AdminApplication(Config::fromEnvironment(getenv(), dirname(__DIR__))))->run($arguments, STDOUT, STDERR));
