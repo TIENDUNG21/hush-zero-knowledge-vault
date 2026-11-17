@@ -253,6 +253,42 @@ async function main() {
   await cdp.until(visible('view-revealed'));
   check(await cdp.evaluate(`${byId('secret-output')}.textContent`) === 'ssh passphrase: correct horse', 'NFC password opens a secret sealed with the NFD spelling');
 
+  console.log('a 1.5 MB file goes up in 512 KiB chunks and comes back intact');
+  await cdp.navigate(`${base}/`);
+  const uploadedHash = await cdp.evaluate(`(async () => {
+    const data = new Uint8Array(1_500_000);
+    for (let i = 0; i < data.length; i += 65536) crypto.getRandomValues(data.subarray(i, i + 65536));
+    const transfer = new DataTransfer();
+    transfer.items.add(new File([data], 'quarterly report.pdf', { type: 'application/pdf' }));
+    const input = ${byId('secret-file')};
+    input.files = transfer.files;
+    input.dispatchEvent(new Event('change'));
+    ${byId('tab-file')}.click();
+    const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', data));
+    return Array.from(digest, (b) => b.toString(16).padStart(2, '0')).join('');
+  })()`);
+  await cdp.screenshot('file');
+  await cdp.evaluate(`${byId('create-button')}.click(); true`);
+  await cdp.until(visible('result'));
+  check((await cdp.evaluate(`${byId('server-view')}.textContent`)).includes('3 chunks'), 'file was uploaded as 3 encrypted chunks');
+  const fileLink = await cdp.evaluate(`${byId('share-link')}.value`);
+  await cdp.navigate(fileLink);
+  await cdp.until(visible('view-locked'));
+  check((await cdp.evaluate(`${byId('facts')}.textContent`)).includes('quarterly report.pdf'), 'file name is decrypted from the metadata before the view is spent');
+  // connect-src 'self' forbids fetching blob: URLs, so capture the Blob as the page creates it.
+  await cdp.evaluate(`window.capturedBlobs = []; const original = URL.createObjectURL;
+    URL.createObjectURL = (blob) => { window.capturedBlobs.push(blob); return original.call(URL, blob); }; true`);
+  await cdp.evaluate(`${byId('reveal-button')}.click(); true`);
+  await cdp.until(visible('view-revealed'));
+  const downloadedHash = await cdp.evaluate(`(async () => {
+    const link = ${byId('download-link')};
+    const data = new Uint8Array(await window.capturedBlobs[0].arrayBuffer());
+    const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', data));
+    return [link.download, Array.from(digest, (b) => b.toString(16).padStart(2, '0')).join('')].join(' ');
+  })()`);
+  check(downloadedHash === `quarterly report.pdf ${uploadedHash}`, 'downloaded file has the same name and SHA-256');
+  await cdp.screenshot('file-revealed');
+
   const cliLink = option('--cli-link');
   if (cliLink) {
     console.log('open a link created by bin/hush');
