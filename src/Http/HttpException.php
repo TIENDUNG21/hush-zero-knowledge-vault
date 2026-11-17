@@ -31,6 +31,11 @@ final class HttpException extends RuntimeException
         return new self(400, $errorCode, $message);
     }
 
+    public static function unauthorized(string $message): self
+    {
+        return new self(401, 'missing_token', $message, ['WWW-Authenticate' => 'Bearer']);
+    }
+
     public static function forbidden(string $errorCode, string $message): self
     {
         return new self(403, $errorCode, $message);
