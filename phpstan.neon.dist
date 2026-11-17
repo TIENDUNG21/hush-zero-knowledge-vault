@@ -11,5 +11,6 @@ parameters:
         - public/index.php
         - bin/hush-admin
         - bin/hush
+        - scripts
     parallel:
         maximumNumberOfProcesses: 4
