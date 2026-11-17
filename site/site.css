@@ -1,0 +1,132 @@
+/* Static "how it works" page. Same palette as the app; no external fonts. */
+
+:root {
+  --bg: #0a0a0a;
+  --surface: #111412;
+  --border: #242b26;
+  --text: #ededed;
+  --muted: #9ba59e;
+  --accent: #3fb950;
+  --accent-ink: #04120a;
+  --danger: #f85149;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SFMono-Regular", "Cascadia Mono", Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.6 var(--sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--accent); }
+code, pre, input, textarea { font-family: var(--mono); }
+code { font-size: 0.92em; color: #cfe9d4; }
+[hidden] { display: none !important; }
+
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border);
+}
+.brand { display: flex; align-items: center; gap: 10px; color: var(--text); font-weight: 700; text-decoration: none; }
+.top nav a { color: var(--muted); font-size: 14px; }
+
+main { max-width: 860px; margin: 0 auto; padding: 24px 16px 64px; }
+section { margin-top: 48px; }
+h1 { font-size: clamp(26px, 4vw, 34px); line-height: 1.2; margin: 24px 0 16px; }
+h2 { font-size: 22px; margin: 0 0 12px; }
+h3 { font-size: 15px; margin: 24px 0 6px; }
+h3:first-child { margin-top: 0; }
+p { margin: 0 0 12px; }
+.muted, .note { color: var(--muted); }
+.note { font-size: 15px; border-left: 2px solid var(--accent); padding-left: 12px; }
+
+.shot { margin: 24px 0 0; }
+.shot img { display: block; width: 100%; height: auto; border: 1px solid var(--border); border-radius: 10px; }
+.shot figcaption { color: var(--muted); font-size: 13px; margin-top: 8px; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-top: 16px;
+}
+
+label { display: block; font-weight: 600; font-size: 14px; margin-bottom: 6px; }
+label .muted { font-weight: 400; }
+textarea, input {
+  width: 100%;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+textarea { resize: vertical; margin-bottom: 12px; }
+textarea:focus, input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+.grow { flex: 1 1 260px; }
+
+button {
+  font: 600 14px var(--sans);
+  border-radius: 8px;
+  padding: 11px 18px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--accent-ink);
+  cursor: pointer;
+}
+button:disabled { opacity: 0.6; cursor: progress; }
+button.secondary { background: transparent; color: var(--text); border-color: var(--border); }
+button.secondary:hover { border-color: var(--accent); }
+
+pre {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 13px;
+  overflow-x: auto;
+}
+pre.wrap { white-space: pre-wrap; word-break: break-all; color: var(--accent); }
+pre.hex { white-space: pre-wrap; line-height: 1.9; }
+pre.term { color: #cfe9d4; }
+
+.fields { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 8px; }
+.fields th, .fields td { text-align: left; padding: 4px 10px 4px 0; border-bottom: 1px solid var(--border); }
+.fields th { color: var(--muted); font-weight: 500; }
+.fields td:first-child { font-family: var(--mono); color: var(--muted); white-space: nowrap; }
+
+/* One quiet tint per header field, shared by the hex dump and the table. */
+.f-magic { color: #ededed; }
+.f-version, .f-flags, .f-reserved { color: #9ba59e; }
+.f-iterations { color: #e3b341; }
+.f-salt { color: #79c0ff; }
+.f-chunkSize, .f-chunkCount { color: #56d364; }
+
+.good { color: var(--accent); }
+.bad { color: var(--danger); }
+
+.steps { padding-left: 20px; }
+.steps li { margin-bottom: 10px; }
+
+footer {
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 14px;
+  text-align: center;
+  padding: 24px 16px;
+}
+footer a { color: var(--muted); }

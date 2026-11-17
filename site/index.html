@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'">
+  <meta name="referrer" content="no-referrer">
+  <title>Hush: how it works</title>
+  <meta name="description" content="Zero-knowledge secret sharing. How the Hush envelope works, with the real envelope code running in this page.">
+  <link rel="icon" href="logo.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="site.css">
+  <script type="module" src="inspector.js"></script>
+</head>
+<body>
+  <header class="top">
+    <a class="brand" href="./"><img src="logo.svg" alt="" width="28" height="28"> Hush</a>
+    <nav><a href="https://github.com/TIENDUNG21/hush-zero-knowledge-vault">Source on GitHub</a></nav>
+  </header>
+
+  <main>
+    <section class="intro">
+      <h1>Zero-knowledge secret sharing. The server never sees a thing.</h1>
+      <p>Hush encrypts a text or a file on your device with AES-256-GCM, uploads only ciphertext, and puts the key after the <code>#</code> in the link, the part of a URL that browsers never send to a server. The server enforces expiry and view limits on bytes it cannot read, and deletes them after the last view.</p>
+      <p class="note">This page is static. Hush itself is a PHP 8.3 server you run yourself (Docker image included); there is no public instance behind this site. The demo below runs the real envelope code in your browser and talks to nothing.</p>
+      <figure class="shot">
+        <img src="img/created.png" width="1200" height="860" alt="The Hush create page after upload: the share link, the delete link, and a panel listing what the server received: a secret id, 568 bytes of ciphertext in one chunk, a 36-byte public header, and not the link key.">
+        <figcaption>After upload, the sender sees exactly what the server received. Screenshot of the real app in headless Edge.</figcaption>
+      </figure>
+    </section>
+
+    <section id="try">
+      <h2>Seal something, in this page</h2>
+      <p>These are the same <code>core/</code> modules the Hush pages load: <code>format.js</code> encodes the envelope, <code>crypto.js</code> calls WebCrypto. Nothing is uploaded.</p>
+      <form id="inspect-form" class="card">
+        <label for="inspect-text">Secret</label>
+        <textarea id="inspect-text" rows="3" spellcheck="false">staging DB password: example-only-4821</textarea>
+        <div class="row">
+          <div class="grow">
+            <label for="inspect-password">Password <span class="muted">optional, adds PBKDF2 with 600,000 iterations</span></label>
+            <input id="inspect-password" type="password" autocomplete="off">
+          </div>
+          <button id="inspect-seal" type="submit">Seal in this page</button>
+        </div>
+      </form>
+
+      <div id="inspect-output" class="card" hidden>
+        <h3>The link</h3>
+        <p class="muted">The id comes from the server; the part after <code>#</code> is the 256-bit key, generated here.</p>
+        <pre id="inspect-link" class="wrap"></pre>
+
+        <h3>The public header, byte by byte</h3>
+        <p class="muted">The only plaintext the server stores. It is also the associated data of every encrypted record, so changing any byte breaks them all.</p>
+        <pre id="inspect-hex" class="hex"></pre>
+        <table class="fields">
+          <thead><tr><th>Bytes</th><th>Field</th><th>Value</th></tr></thead>
+          <tbody id="inspect-fields"></tbody>
+        </table>
+
+        <h3>Sizes</h3>
+        <p id="inspect-sizes"></p>
+        <p class="muted">Text and metadata are padded to 256-byte blocks before encryption, so a 4-digit PIN and a 200-character API key produce the same ciphertext length.</p>
+
+        <h3>Round trip</h3>
+        <p id="inspect-roundtrip"></p>
+
+        <h3>Tamper with it</h3>
+        <p class="muted">What a malicious server could try. AES-GCM authenticates every record together with the header, its kind and its index.</p>
+        <div class="row">
+          <button id="tamper-header" type="button" class="secondary">Flip a bit in the header</button>
+          <button id="tamper-chunk" type="button" class="secondary">Flip a bit in the ciphertext</button>
+        </div>
+        <p id="tamper-result"></p>
+      </div>
+    </section>
+
+    <section>
+      <h2>How a secret travels</h2>
+      <ol class="steps">
+        <li><strong>Seal.</strong> The sender's browser (or <code>bin/hush</code>) draws a random 32-byte key, derives the content key with HKDF-SHA256 (mixing in PBKDF2 of the password when there is one), pads the data to 256-byte blocks and encrypts the metadata and each 512 KiB chunk with AES-256-GCM.</li>
+        <li><strong>Upload.</strong> <code>POST /api/secrets</code> sends the 36-byte header and the encrypted metadata and returns an id and a deletion token. Each chunk follows with <code>PUT</code>, then <code>POST .../seal</code>. The server checks lengths against the header; it has no key to check anything else.</li>
+        <li><strong>Share.</strong> The link is <code>/s/{id}#{key}</code>. Chat apps and preview bots that fetch it get a static page; nothing is consumed by a <code>GET</code>.</li>
+        <li><strong>Open.</strong> The recipient's page reads the key from <code>location.hash</code>, checks a password against the encrypted metadata first, then sends <code>POST .../open</code>. One SQL statement claims the view and marks the last one burned, so two readers racing for a one-view secret cannot both win.</li>
+        <li><strong>Burn.</strong> After the last view the rows are deleted once the response has been sent; a garbage-collection command removes expired, abandoned and interrupted ones.</li>
+      </ol>
+      <figure class="shot">
+        <img src="img/view.png" width="1200" height="860" alt="The Hush view page before reveal: contains text, 73 bytes, expiry time, 1 view left, and a Reveal secret button with a warning that this is the last view.">
+        <figcaption>The recipient's page before Reveal. Loading it spends nothing.</figcaption>
+      </figure>
+    </section>
+
+    <section>
+      <h2>What the server can still see</h2>
+      <p>Ciphertext length rounded to 256 bytes, chunk size and count, whether a password was used, expiry and view counts, and the IP address and time of each request while it is being handled. Hush does not store addresses: rate-limit buckets are keyed by an HMAC of the client network, and the Docker image writes no access log.</p>
+      <p>The hard limit is the one every browser-based end-to-end tool has: the page's JavaScript comes from the server it is meant to distrust. An operator who changes <code>crypto.js</code> could read secrets sent through the browser. The terminal client does not have this problem, because it encrypts with code already on your machine. The <a href="https://github.com/TIENDUNG21/hush-zero-knowledge-vault/blob/main/docs/THREAT_MODEL.md">threat model</a> covers this and the other limits.</p>
+    </section>
+
+    <section>
+      <h2>Run it</h2>
+<pre class="term">git clone https://github.com/TIENDUNG21/hush-zero-knowledge-vault
+cd hush-zero-knowledge-vault
+docker compose up -d --build        # http://127.0.0.1:8080
+
+# or without Docker (PHP 8.3 with pdo_sqlite and openssl)
+composer install
+php bin/hush-admin migrate
+php -S 127.0.0.1:8080 public/index.php
+
+# from a terminal, against either
+echo 'staging DB password: example-only' | php bin/hush send --server http://127.0.0.1:8080 --views 1
+php bin/hush get 'http://127.0.0.1:8080/s/...#...'</pre>
+    </section>
+  </main>
+
+  <footer>
+    MIT licensed. <a href="https://github.com/TIENDUNG21/hush-zero-knowledge-vault/blob/main/docs/ARCHITECTURE.md">Architecture</a> ·
+    <a href="https://github.com/TIENDUNG21/hush-zero-knowledge-vault/blob/main/SECURITY.md">Security policy</a>
+  </footer>
+</body>
+</html>
