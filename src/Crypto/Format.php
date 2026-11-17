@@ -47,6 +47,15 @@ final class Format
         return max(self::PAD_BLOCK, intdiv($size + self::PAD_BLOCK - 1, self::PAD_BLOCK) * self::PAD_BLOCK);
     }
 
+    /**
+     * Default chunk size for large payloads, otherwise one right-sized chunk,
+     * so the header never reserves more than needed on the server.
+     */
+    public static function chooseChunkSize(int $size): int
+    {
+        return min(self::DEFAULT_CHUNK_SIZE, max(self::MIN_CHUNK_SIZE, self::paddedLength($size)));
+    }
+
     public static function chunkCount(int $paddedLength, int $chunkSize): int
     {
         return intdiv($paddedLength + $chunkSize - 1, $chunkSize);

@@ -72,6 +72,13 @@ final class FormatTest extends TestCase
         self::assertSame(1, Format::chunkCount(1024, 1024));
     }
 
+    public function testChunkSizeIsRightSized(): void
+    {
+        self::assertSame(1024, Format::chooseChunkSize(0));
+        self::assertSame(5120, Format::chooseChunkSize(5000));
+        self::assertSame(524_288, Format::chooseChunkSize(10 * 1_048_576));
+    }
+
     public function testAadBindsHeaderKindAndIndex(): void
     {
         self::assertSame('H' . "\x01" . "\x00\x00\x01\x02", Format::aad('H', Format::KIND_CHUNK, 258));

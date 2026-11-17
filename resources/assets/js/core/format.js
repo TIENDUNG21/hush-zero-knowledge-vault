@@ -141,6 +141,27 @@ export function chunkCountFor(padded, chunkSize) {
 }
 
 /**
+ * Chunk size for a payload: the default for large payloads, otherwise just
+ * big enough for one chunk, so the header never claims more space than
+ * needed (servers compare chunkSize * chunkCount with their limit).
+ * @param {number} size
+ * @returns {number}
+ */
+export function chooseChunkSize(size) {
+  return Math.min(DEFAULT_CHUNK_SIZE, Math.max(MIN_CHUNK_SIZE, paddedLength(size)));
+}
+
+/**
+ * Bytes a payload of this size reserves on the server (chunkSize * chunkCount).
+ * @param {number} size
+ * @returns {number}
+ */
+export function reservedBytes(size) {
+  const chunkSize = chooseChunkSize(size);
+  return chunkCountFor(paddedLength(size), chunkSize) * chunkSize;
+}
+
+/**
  * header || kind || u32 index: binds a record to its envelope and position.
  * @param {Bytes} headerBytes
  * @param {number} kind

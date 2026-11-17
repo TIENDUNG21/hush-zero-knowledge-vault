@@ -4,6 +4,7 @@ import { test } from 'node:test';
 import { concatBytes, u32be, utf8Decode, utf8Encode } from '../../resources/assets/js/core/bytes.js';
 import {
   EnvelopeError,
+  chooseChunkSize,
   chunkCountFor,
   encodeHeader,
   encodeMeta,
@@ -12,6 +13,7 @@ import {
   parseHeader,
   parseMeta,
   recordAad,
+  reservedBytes,
   safeFileMeta,
   unpackPackage,
 } from '../../resources/assets/js/core/format.js';
@@ -131,4 +133,13 @@ test('package round-trips and rejects truncation and extra chunks', () => {
   assertEnvelopeError(() => unpackPackage(extra), 'format', /more chunks/);
   const tiny = concatBytes(headerBytes, u32be(28), new Uint8Array(28));
   assertEnvelopeError(() => unpackPackage(tiny), 'format', /out of range/);
+});
+
+test('chunk size is right-sized for small payloads and capped for large ones', () => {
+  assert.equal(chooseChunkSize(0), 1024);
+  assert.equal(chooseChunkSize(5000), 5120);
+  assert.equal(chooseChunkSize(10 * 1024 * 1024), 524288);
+  assert.equal(reservedBytes(300), 1024);
+  assert.equal(reservedBytes(32 * 1024 * 1024), 32 * 1024 * 1024);
+  assert.equal(reservedBytes(32 * 1024 * 1024 + 1), 32 * 1024 * 1024 + 524288);
 });

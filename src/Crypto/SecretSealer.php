@@ -16,12 +16,13 @@ final class SecretSealer
         $nonces = $options->nonces ?? static fn(): string => random_bytes(Format::NONCE_LENGTH);
 
         $paddedLength = Format::paddedLength(strlen($secret->data));
+        $chunkSize = $options->chunkSize ?? Format::chooseChunkSize(strlen($secret->data));
         $header = new Header(
             $options->hasPassword(),
             $options->hasPassword() ? $options->iterations : 0,
             $salt,
-            $options->chunkSize,
-            Format::chunkCount($paddedLength, $options->chunkSize),
+            $chunkSize,
+            Format::chunkCount($paddedLength, $chunkSize),
         );
         $headerBytes = $header->encode();
         $key = KeySchedule::contentKey($fragmentKey, $header, $options->password);

@@ -3,7 +3,6 @@
 
 import { concatBytes, randomBytes, utf8Decode, utf8Encode } from './bytes.js';
 import {
-  DEFAULT_CHUNK_SIZE,
   DEFAULT_ITERATIONS,
   EnvelopeError,
   HKDF_INFO,
@@ -14,6 +13,7 @@ import {
   NONCE_LENGTH,
   RECORD_OVERHEAD,
   SALT_LENGTH,
+  chooseChunkSize,
   chunkCountFor,
   encodeHeader,
   encodeMeta,
@@ -163,7 +163,7 @@ export async function sealSecret(input, options = {}) {
     : { kind: 'file', name: input.name, type: input.type, size: data.length };
 
   const hasPassword = typeof options.password === 'string' && options.password !== '';
-  const chunkSize = options.chunkSize ?? DEFAULT_CHUNK_SIZE;
+  const chunkSize = options.chunkSize ?? chooseChunkSize(data.length);
   const padded = paddedLength(data.length);
   const fragmentKey = options.fragmentKey ?? generateFragmentKey();
   /** @type {Header} */
