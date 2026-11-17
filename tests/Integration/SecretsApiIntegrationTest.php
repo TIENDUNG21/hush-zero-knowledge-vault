@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Hush\Tests\Integration;
 
 use Hush\Crypto\Package;
+use Hush\Crypto\PlainSecret;
 use Hush\Crypto\SecretOpener;
+use Hush\Crypto\SecretSealer;
 use Hush\Support\Base64Url;
 use Hush\Tests\Support\Sql;
 use Hush\Tests\Support\VaultFixture;
@@ -53,6 +55,22 @@ final class SecretsApiIntegrationTest extends IntegrationTestCase
         self::assertSame(404, $gone->status);
         self::assertSame('not_found', $this->errorCode($gone));
         self::assertSame(0, Sql::scalar($this->database(), 'SELECT COUNT(*) FROM secrets WHERE id = ?', [$id]), 'purged after the last view');
+    }
+
+    public function testLargeFileTravelsInDefaultSizedChunks(): void
+    {
+        $data = random_bytes(1_200_000);
+        $sealed = SecretSealer::seal(PlainSecret::file($data, 'backup.tar.gz', 'application/gzip'));
+        self::assertSame(524_288, $sealed->header->chunkSize);
+        self::assertSame(3, $sealed->header->chunkCount);
+        [$id] = $this->storeSecret($sealed);
+
+        $opened = $this->request('POST', "/api/secrets/{$id}/open");
+
+        self::assertSame(200, $opened->status);
+        $plain = SecretOpener::open(Package::unpack($opened->body), $sealed->fragmentKey);
+        self::assertSame(hash('sha256', $data), hash('sha256', $plain->data));
+        self::assertSame('backup.tar.gz', $plain->name);
     }
 
     public function testStatusDoesNotConsumeViews(): void

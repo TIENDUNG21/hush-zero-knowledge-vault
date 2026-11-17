@@ -181,3 +181,28 @@ test('inspect checks the password before a view is spent; reveal decrypts', asyn
   assert.equal(viewsLeft, 0);
   assert.deepEqual(fromBase64Url(statusBody.header), sealed.headerBytes);
 });
+
+test('a 1.2 MB file uploads as three default-sized chunks and decrypts', async () => {
+  const data = randomBytes(1_200_000);
+  const sealed = await sealSecret({ kind: 'file', data, name: 'backup.tar.gz', type: 'application/gzip' });
+  assert.equal(sealed.header.chunkSize, 524288);
+  assert.equal(sealed.chunkCount, 3);
+  /** @type {Uint8Array[]} */
+  const stored = [];
+  const { impl } = fakeFetch([
+    () => json({ id: ID, deletionToken: TOKEN, expiresAt: 10, uploadDeadline: 5, chunkCount: 3 }, 201),
+    ...[0, 1, 2].map(() => async (/** @type {string} */ _url, /** @type {RequestInit} */ init) => {
+      stored.push(new Uint8Array(/** @type {Uint8Array} */ (init.body)));
+      return new Response(null, { status: 204 });
+    }),
+    () => json({ id: ID, state: 'sealed' }),
+  ]);
+  await uploadSealed(new HushApi('', impl), sealed, { expiresIn: 600, maxViews: 1 });
+
+  assert.deepEqual(stored.map((c) => c.length), [524288 + 28, 524288 + 28, 151552 + 28]);
+  assert.equal(sealed.ciphertextBytes, sealed.metaRecord.length + stored.reduce((n, c) => n + c.length, 0));
+  const pkg = packPackage({ headerBytes: sealed.headerBytes, meta: sealed.metaRecord, chunks: /** @type {any} */ (stored) });
+  const opened = await openPackage(pkg, sealed.fragmentKey);
+  assert.deepEqual(opened.data, data);
+  assert.equal(opened.name, 'backup.tar.gz');
+});
