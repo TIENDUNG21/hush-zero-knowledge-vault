@@ -8,6 +8,7 @@ use Closure;
 use Hush\Http\HttpException;
 use Hush\Http\Request;
 use Hush\Http\Response;
+use Hush\Support\Base64Url;
 use Hush\Support\Json;
 use Hush\Vault\Token;
 use Hush\Vault\VaultException;
@@ -65,7 +66,7 @@ final class SecretsController
         return Response::json(['id' => $id, 'state' => 'sealed']);
     }
 
-    /** GET /api/secrets/{id} (does not consume a view) */
+    /** GET /api/secrets/{id}: limits plus header and encrypted meta, without consuming a view */
     public function status(Request $request): Response
     {
         $status = $this->guard(fn() => $this->vault->status($request->routeParam('id')));
@@ -77,6 +78,8 @@ final class SecretsController
             'viewsLeft' => $status->viewsLeft,
             'chunkCount' => $status->chunkCount,
             'ciphertextBytes' => $status->ciphertextBytes,
+            'header' => Base64Url::encode($status->header),
+            'meta' => Base64Url::encode($status->meta),
         ]);
     }
 

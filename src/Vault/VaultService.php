@@ -127,6 +127,8 @@ final class VaultService
             $secret->maxViews - $secret->views,
             $secret->chunkCount,
             strlen($secret->meta) + $this->secrets->storedBytes($id),
+            $secret->header,
+            $secret->meta,
         );
     }
 

@@ -35,6 +35,8 @@ final class SecretsApiIntegrationTest extends IntegrationTestCase
         self::assertFalse($status->json()['passwordProtected']);
         self::assertSame(2, $status->json()['viewsLeft']);
         self::assertSame(3, $status->json()['chunkCount']);
+        self::assertSame(Base64Url::encode($sealed->headerBytes), $status->json()['header']);
+        self::assertSame(Base64Url::encode($sealed->metaRecord), $status->json()['meta']);
 
         $opened = $this->request('POST', "/api/secrets/{$id}/open");
         self::assertSame(200, $opened->status);
