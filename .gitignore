@@ -1,0 +1,11 @@
+/vendor/
+/node_modules/
+/var/
+/dist/
+/.cache/
+/.phpunit.cache/
+/.php-cs-fixer.cache
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+.env

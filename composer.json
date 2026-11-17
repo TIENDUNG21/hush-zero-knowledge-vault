@@ -1,0 +1,48 @@
+{
+    "name": "tiendung21/hush-zero-knowledge-vault",
+    "description": "Zero-knowledge secret sharing. The server never sees a thing.",
+    "type": "project",
+    "license": "MIT",
+    "require": {
+        "php": ">=8.3",
+        "ext-hash": "*",
+        "ext-json": "*",
+        "ext-openssl": "*",
+        "ext-pdo": "*",
+        "ext-pdo_sqlite": "*"
+    },
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.64",
+        "phpstan/phpstan": "^2.1",
+        "phpstan/phpstan-phpunit": "^2.0",
+        "phpstan/phpstan-strict-rules": "^2.0",
+        "phpunit/phpunit": "^11.5"
+    },
+    "suggest": {
+        "ext-intl": "Lets the CLI NFC-normalize non-ASCII passwords"
+    },
+    "autoload": {
+        "psr-4": {
+            "Hush\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Hush\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "optimize-autoloader": true,
+        "allow-plugins": {
+            "phpstan/extension-installer": false
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "test:unit": "phpunit --testsuite unit",
+        "stan": "phpstan analyse --memory-limit=1G --no-progress",
+        "lint": "php-cs-fixer check --diff",
+        "fix": "php-cs-fixer fix"
+    }
+}
