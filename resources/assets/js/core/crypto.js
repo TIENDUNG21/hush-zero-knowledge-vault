@@ -46,6 +46,7 @@ import {
  * @property {Bytes} headerBytes
  * @property {Bytes} metaRecord
  * @property {number} chunkCount
+ * @property {number} ciphertextBytes metadata record plus all chunk records
  * @property {(index: number) => Promise<Bytes>} encryptChunk fresh nonce per call
  * @property {() => Promise<Bytes>} toPackage
  *
@@ -200,7 +201,9 @@ export async function sealSecret(input, options = {}) {
     return packPackage({ headerBytes, meta: metaRecord, chunks });
   };
 
-  return { fragmentKey, header, headerBytes, metaRecord, chunkCount: header.chunkCount, encryptChunk, toPackage };
+  const ciphertextBytes = metaRecord.length + padded + header.chunkCount * RECORD_OVERHEAD;
+
+  return { fragmentKey, header, headerBytes, metaRecord, chunkCount: header.chunkCount, ciphertextBytes, encryptChunk, toPackage };
 }
 
 /**
