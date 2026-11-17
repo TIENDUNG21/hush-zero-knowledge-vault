@@ -117,7 +117,9 @@ final class Container
             if ($type instanceof ReflectionNamedType && !$type->isBuiltin()) {
                 /** @var class-string $dependency */
                 $dependency = $type->getName();
-                if ($parameter->isDefaultValueAvailable() && !$this->has($dependency)) {
+                // Optional collaborators are injected only when explicitly registered.
+                $registered = isset($this->factories[$dependency]) || isset($this->instances[$dependency]);
+                if ($parameter->isDefaultValueAvailable() && !$registered) {
                     $arguments[] = $parameter->getDefaultValue();
                     continue;
                 }

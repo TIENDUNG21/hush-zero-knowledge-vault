@@ -8,5 +8,6 @@ parameters:
     paths:
         - src
         - tests
+        - public/index.php
     parallel:
         maximumNumberOfProcesses: 4
