@@ -48,7 +48,7 @@ final class AdminApplicationTest extends TestCase
         self::assertStringNotContainsString($id, $stats);
 
         [, $gc] = $this->runCommand(new AdminApplication($config, $app), ['gc']);
-        self::assertSame('Removed 1 expired, 0 abandoned and 0 burned secrets.' . PHP_EOL, $gc);
+        self::assertSame('Removed 1 expired, 0 abandoned and 0 burned secrets; pruned 0 rate-limit buckets.' . PHP_EOL, $gc);
     }
 
     public function testUnknownCommandFails(): void

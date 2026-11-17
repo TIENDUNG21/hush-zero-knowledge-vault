@@ -15,8 +15,11 @@ final class Config
 {
     public const int MIB = 1048576;
 
+    /** @var array<string, RateRule> */
+    public readonly array $rateRules;
+
     /**
-     * @param array<string, RateRule> $rateRules
+     * @param array<string, RateRule> $rateRules empty means {@see defaultRateRules()}
      * @param list<string> $trustedProxies
      */
     public function __construct(
@@ -27,9 +30,11 @@ final class Config
         public readonly int $maxTtlSeconds = 604800,
         public readonly int $uploadWindowSeconds = 900,
         public readonly int $burnGraceSeconds = 300,
-        public readonly array $rateRules = [],
+        array $rateRules = [],
         public readonly array $trustedProxies = [],
-    ) {}
+    ) {
+        $this->rateRules = $rateRules === [] ? self::defaultRateRules() : $rateRules;
+    }
 
     /**
      * @return array<string, RateRule>

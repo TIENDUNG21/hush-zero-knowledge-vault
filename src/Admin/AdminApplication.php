@@ -6,6 +6,7 @@ namespace Hush\Admin;
 
 use Hush\Config\Config;
 use Hush\Kernel\Application;
+use Hush\Security\RateLimiter;
 use Hush\Storage\Migrator;
 use Hush\Vault\SecretRepository;
 use Hush\Vault\VaultService;
@@ -67,11 +68,13 @@ final class AdminApplication
     private function gc($out): int
     {
         $report = $this->app->container()->get(VaultService::class)->collectGarbage();
+        $buckets = $this->app->container()->get(RateLimiter::class)->prune();
         fwrite($out, sprintf(
-            'Removed %d expired, %d abandoned and %d burned secrets.%s',
+            'Removed %d expired, %d abandoned and %d burned secrets; pruned %d rate-limit buckets.%s',
             $report['expired'],
             $report['abandoned'],
             $report['burned'],
+            $buckets,
             PHP_EOL,
         ));
 
@@ -100,7 +103,7 @@ final class AdminApplication
             Usage: hush-admin <command>
 
               migrate   apply pending database migrations
-              gc        delete expired, abandoned and burned secrets
+              gc        delete expired, abandoned and burned secrets and idle rate-limit buckets
               stats     print row counts and stored ciphertext bytes
 
             Configuration comes from HUSH_* environment variables (see README).

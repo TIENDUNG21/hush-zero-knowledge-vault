@@ -11,6 +11,9 @@ use Hush\Container\Container;
 use Hush\Crypto\Format;
 use Hush\Routing\Router;
 use Hush\Security\BodyLimitMiddleware;
+use Hush\Security\OriginCheckMiddleware;
+use Hush\Security\RateLimitMiddleware;
+use Hush\Security\SecurityHeadersMiddleware;
 use Hush\Storage\Database;
 use Hush\Support\Clock;
 use Hush\Support\ErrorLogLogger;
@@ -53,9 +56,14 @@ final class Application
     {
         $c = $this->container;
 
+        // Outermost first. Headers wrap everything (errors included); routing
+        // runs early so the security layers can read per-route policy.
         return new HttpKernel([
+            $c->get(SecurityHeadersMiddleware::class),
             $c->get(ErrorMiddleware::class),
             $c->get(RoutingMiddleware::class),
+            $c->get(OriginCheckMiddleware::class),
+            $c->get(RateLimitMiddleware::class),
             $c->get(BodyLimitMiddleware::class),
         ], $c->get(DispatchHandler::class));
     }

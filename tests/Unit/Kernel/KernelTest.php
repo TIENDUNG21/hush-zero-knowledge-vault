@@ -14,6 +14,8 @@ use Hush\Kernel\JsonErrorRenderer;
 use Hush\Middleware\CallableHandler;
 use Hush\Support\Logger;
 use Hush\Tests\Support\MemoryLogger;
+use Hush\Tests\Support\VaultFixture;
+use PDO;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
@@ -88,7 +90,7 @@ final class KernelTest extends TestCase
     {
         return new Application(
             new Config(sys_get_temp_dir(), ':memory:'),
-            [Logger::class => new MemoryLogger()],
+            [Logger::class => new MemoryLogger(), PDO::class => (new VaultFixture())->pdo],
         );
     }
 }
