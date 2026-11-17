@@ -75,10 +75,12 @@ jobs:
       - name: Health, headers and no access log
         run: |
           curl -fsS http://127.0.0.1:8080/healthz
-          curl -fsSI http://127.0.0.1:8080/ | tee headers.txt
+          curl -fsSI http://127.0.0.1:8080/ | tr -d '\r' | tee headers.txt
           grep -qi "content-security-policy: default-src 'none'" headers.txt
           grep -qi '^server: apache$' headers.txt
           ! grep -qi 'x-powered-by' headers.txt
+          # The image sends logs to stdout; no request line may appear there.
+          ! docker compose logs hush | grep -E '"(GET|POST|PUT|DELETE) /'
 
       - name: bin/hush round trip against the container
         run: |
@@ -87,6 +89,10 @@ jobs:
           test "$(php bin/hush get "$link")" = "sent to the container"
           ! php bin/hush get "$link"
           docker compose exec -T hush php bin/hush-admin stats
+          # The server must not log the secret id anywhere.
+          id=${link##*/s/}; id=${id%%#*}
+          test ${#id} -eq 22
+          ! docker compose logs | grep -F "$id"
 
       - name: Container logs
         if: always()
