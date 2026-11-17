@@ -8,7 +8,7 @@ namespace Hush\Crypto;
  * The public 36-byte envelope header.
  *
  *   0  4  magic "HUSH"         12 16 salt
- *   4  1  version = 1          28  4 chunk size (u32 BE)
+ *   4  1  version = 1          28  4 chunk size (u32 BE, multiple of 256)
  *   5  1  flags (bit 0 = pw)   32  4 chunk count (u32 BE)
  *   6  2  reserved = 0
  *   8  4  PBKDF2 iterations (u32 BE, 0 without password)
@@ -91,9 +91,10 @@ final class Header
         if (strlen($salt) !== Format::SALT_LENGTH) {
             throw CryptoException::format('Salt must be 16 bytes');
         }
-        if ($chunkSize < Format::MIN_CHUNK_SIZE || $chunkSize > Format::MAX_CHUNK_SIZE) {
+        if ($chunkSize < Format::MIN_CHUNK_SIZE || $chunkSize > Format::MAX_CHUNK_SIZE || $chunkSize % Format::PAD_BLOCK !== 0) {
             throw CryptoException::format(sprintf(
-                'Chunk size must be between %d and %d bytes',
+                'Chunk size must be a multiple of %d between %d and %d bytes',
+                Format::PAD_BLOCK,
                 Format::MIN_CHUNK_SIZE,
                 Format::MAX_CHUNK_SIZE,
             ));

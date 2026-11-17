@@ -45,7 +45,8 @@ final class FormatTest extends TestCase
         yield 'password with too few iterations' => [substr_replace(substr_replace($valid, "\x01", 5, 1), pack('N', 1000), 8, 4), 'iterations'];
         yield 'absurd iterations' => [substr_replace(substr_replace($valid, "\x01", 5, 1), pack('N', 0xFFFFFFFF), 8, 4), 'iterations'];
         yield 'chunk too small' => [substr_replace($valid, pack('N', 16), 28, 4), 'Chunk size'];
-        yield 'chunk too large' => [substr_replace($valid, pack('N', 1_048_577), 28, 4), 'Chunk size'];
+        yield 'chunk too large' => [substr_replace($valid, pack('N', 1_048_832), 28, 4), 'Chunk size'];
+        yield 'chunk not a block multiple' => [substr_replace($valid, pack('N', 1025), 28, 4), 'multiple of 256'];
         yield 'zero chunks' => [substr_replace($valid, pack('N', 0), 32, 4), 'Chunk count'];
     }
 

@@ -29,6 +29,10 @@ final class SealedSecret
         private readonly Closure $nonces,
     ) {}
 
+    /**
+     * Encrypts chunk $index. Every call uses a fresh nonce, so call it once
+     * per chunk and keep the result.
+     */
     public function chunkRecord(int $index): string
     {
         if ($index < 0 || $index >= $this->header->chunkCount) {
