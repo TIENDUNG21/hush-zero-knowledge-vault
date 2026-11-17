@@ -5,7 +5,7 @@
 [![CI](https://github.com/TIENDUNG21/hush-zero-knowledge-vault/actions/workflows/ci.yml/badge.svg)](https://github.com/TIENDUNG21/hush-zero-knowledge-vault/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-3fb950.svg)](LICENSE)
 
-Hush is a self-hosted service for sharing a password, key or file through a one-time link. The browser or the `bin/hush` CLI encrypts with AES-256-GCM before upload, the key travels in the link's `#fragment`, and the PHP server stores ciphertext it cannot decrypt, then deletes it after the last view or at expiry.
+Hush is a self-hosted service for sharing a password, key or file through a link that works for a set number of views (one by default) and then stops. The browser or the `bin/hush` CLI encrypts with AES-256-GCM before upload, the key travels in the link's `#fragment`, and the PHP server stores ciphertext it cannot decrypt and deletes it after the last view or at expiry.
 
 ![Create page after upload, showing the share link and what the server received](docs/screenshots/created.png)
 
