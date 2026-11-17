@@ -1,0 +1,13 @@
+.git
+.github
+.cache
+.phpunit.cache
+node_modules
+vendor
+var
+dist
+docs
+site
+tests
+scripts
+*.sqlite*

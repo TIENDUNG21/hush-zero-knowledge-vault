@@ -55,3 +55,41 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npm test
+
+  docker:
+    name: Docker image (build, compose up, CLI round trip)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: intl, pdo_sqlite, openssl
+          coverage: none
+          tools: composer:v2
+
+      - name: Build and start the stack
+        run: docker compose up -d --build --wait --wait-timeout 120
+
+      - name: Health, headers and no access log
+        run: |
+          curl -fsS http://127.0.0.1:8080/healthz
+          curl -fsSI http://127.0.0.1:8080/ | tee headers.txt
+          grep -qi "content-security-policy: default-src 'none'" headers.txt
+          grep -qi '^server: apache$' headers.txt
+          ! grep -qi 'x-powered-by' headers.txt
+
+      - name: bin/hush round trip against the container
+        run: |
+          composer install --no-dev --no-interaction --no-progress
+          link=$(printf 'sent to the container' | php bin/hush send --server http://127.0.0.1:8080)
+          test "$(php bin/hush get "$link")" = "sent to the container"
+          ! php bin/hush get "$link"
+          docker compose exec -T hush php bin/hush-admin stats
+
+      - name: Container logs
+        if: always()
+        run: docker compose logs
+
+      - run: docker compose down -v
