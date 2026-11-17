@@ -1,11 +1,11 @@
 // End-to-end check in a real browser (headless Edge or Chrome over the
 // DevTools protocol) against the real PHP server.
 //
-//   node scripts/browser-check.mjs [--screenshots docs/screenshots] [--cli-link <url> --cli-text <text>]
+//   node scripts/browser-check.mjs [--screenshots docs/screenshots]
 //
-// It creates a text secret and a password-protected secret through the UI,
-// opens both links, checks the decrypted text, checks that a wrong password
-// does not consume a view, and fails on any console error or CSP violation.
+// It creates text, password-protected and file secrets through the UI, opens
+// them, opens a link made by bin/hush, checks that a wrong password does not
+// consume a view, and fails on any console error or CSP violation.
 
 import { spawn, spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
@@ -289,15 +289,15 @@ async function main() {
   check(downloadedHash === `quarterly report.pdf ${uploadedHash}`, 'downloaded file has the same name and SHA-256');
   await cdp.screenshot('file-revealed');
 
-  const cliLink = option('--cli-link');
-  if (cliLink) {
-    console.log('open a link created by bin/hush');
-    await cdp.navigate(cliLink);
-    await cdp.until(visible('view-locked'));
-    await cdp.evaluate(`${byId('reveal-button')}.click(); true`);
-    await cdp.until(visible('view-revealed'));
-    check(await cdp.evaluate(`${byId('secret-output')}.textContent`) === option('--cli-text'), 'browser decrypts what the PHP CLI encrypted');
-  }
+  console.log('open a link created by bin/hush (OpenSSL) in the browser (WebCrypto)');
+  const cliText = 'sent from bin/hush: Mật khẩu \u{1F510}';
+  const sent = spawnSync(php, ['bin/hush', 'send', '--server', base], { cwd: root, env, input: cliText, encoding: 'utf8' });
+  check(sent.status === 0, `bin/hush send exited 0 ${sent.stderr}`);
+  await cdp.navigate(sent.stdout.trim());
+  await cdp.until(visible('view-locked'));
+  await cdp.evaluate(`${byId('reveal-button')}.click(); true`);
+  await cdp.until(visible('view-revealed'));
+  check(await cdp.evaluate(`${byId('secret-output')}.textContent`) === cliText, 'browser decrypts what the PHP CLI encrypted');
 
   console.log('a damaged link is explained');
   await cdp.navigate(link.replace(/#.*/, '#short'));
