@@ -10,5 +10,6 @@ parameters:
         - tests
         - public/index.php
         - bin/hush-admin
+        - bin/hush
     parallel:
         maximumNumberOfProcesses: 4

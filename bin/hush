@@ -1,0 +1,11 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use Hush\Cli\CliApplication;
+use Hush\Cli\ConsoleIo;
+
+require dirname(__DIR__) . '/vendor/autoload.php';
+
+exit(CliApplication::create()->run(array_slice($argv, 1), new ConsoleIo()));

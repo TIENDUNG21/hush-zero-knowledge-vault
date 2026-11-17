@@ -11,6 +11,18 @@ namespace Hush\Crypto;
  */
 final class SecretOpener
 {
+    /**
+     * Decrypts only the metadata record: checks the link key and password
+     * before a view is spent, and tells what is about to be received.
+     */
+    public static function openMeta(string $headerBytes, string $metaRecord, string $fragmentKey, ?string $password = null): Meta
+    {
+        $header = Header::parse($headerBytes);
+        $key = KeySchedule::contentKey($fragmentKey, $header, $password);
+
+        return Meta::parse(RecordCipher::open($key, Format::aad($headerBytes, Format::KIND_META, 0), $metaRecord));
+    }
+
     public static function open(Package $package, string $fragmentKey, ?string $password = null): PlainSecret
     {
         $header = $package->header;
